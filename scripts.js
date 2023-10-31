@@ -1,9 +1,8 @@
 /* eslint-disable import/extensions */
+import "./components/books-preview.js";
 import { authors, books } from "./modules/data.js";
-
-import book from "./modules/dom-manipulation.js";
-
-import { booksPreviewObj } from "./modules/books-preview.js";
+import { book } from "./modules/dom-manipulation.js";
+// import { booksPreviewObj } from "./modules/books-preview.js";
 
 // toggleDialogHandler
 
@@ -181,7 +180,20 @@ book.list.close.addEventListener("click", () => {
 	handleToggleDialog("list");
 });
 
-book.list.button.addEventListener("click", booksPreviewObj.loadNextPage);
+// book.list.button.addEventListener("click", booksPreviewObj.loadNextPage);
 book.list.items.addEventListener("click", handleOpenBookPreviewDialog);
-book.search.form.addEventListener("submit", handleBookFilterSearch);
+// book.search.form.addEventListener("submit", handleBookFilterSearch);
 book.settings.form.addEventListener("submit", toggleThemeHandler);
+
+const extracted = books.slice(0, 36);
+extracted.forEach((singleBook) => {
+	const { id, image, title, author } = singleBook;
+	const element = document.createElement("books-preview");
+	element.setAttribute("title", title);
+	element.setAttribute("author", authors[author]);
+	element.setAttribute("image", image);
+	element.setAttribute("id", id);
+
+	console.log(element);
+	book.list.items.appendChild(element);
+});
