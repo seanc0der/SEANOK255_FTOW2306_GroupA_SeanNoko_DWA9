@@ -133,28 +133,30 @@ customElements.define(
 				author: getHTML({ dataAttr: "preview-author", target: this.#shadow }),
 			};
 
-			if (!(this.#elements.id instanceof HTMLElement)) {
-				throw new Error("The instance is required to be an HTML Element");
+			const { id, image, title, author } = this.#elements;
+
+			if (!(id instanceof HTMLElement)) {
+				throw new Error("The instance must be an HTML Element");
 			}
 
-			this.#elements.id.setAttribute("data-preview", this.#id);
+			id.setAttribute("data-preview", this.#id);
 
-			if (!(this.#elements.image instanceof HTMLElement)) {
-				throw new Error("The instance is required to be an HTML Element");
+			if (!(image instanceof HTMLElement)) {
+				throw new Error("The instance must be an HTML Element");
 			}
 
-			this.#elements.image.setAttribute("src", this.#image);
+			image.setAttribute("src", this.#image);
 
-			if (!(this.#elements.title instanceof HTMLElement)) {
-				throw new Error("The instance is required to be an HTML Element");
+			if (!(title instanceof HTMLElement)) {
+				throw new Error("The instance must be an HTML Element");
 			}
 
-			this.#elements.title.textContent = this.#title;
+			title.textContent = this.#title;
 
-			if (!(this.#elements.author instanceof HTMLElement)) {
-				throw new Error("The instance is required to be an HTML Element");
+			if (!(author instanceof HTMLElement)) {
+				throw new Error("The instance must be an HTML Element");
 			}
-			this.#elements.author.textContent = this.#author;
+			author.textContent = this.#author;
 		}
 	}
 );
