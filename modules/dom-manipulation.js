@@ -1,3 +1,4 @@
+//@ts-check
 /* eslint-disable import/extensions */
 import { authors, genres } from "./data.js";
 
@@ -5,17 +6,22 @@ import { authors, genres } from "./data.js";
  * Finds and returns the HTML element with the provided data attribute. Throws
  * an error if the element with the specified data attribute is not found.
  *
- * @param {string} dataAttribute - The data attribute to search for, including
+ * @param {{dataAttr: string}} dataAttribute - The data attribute to search for, including
  * the `data-` prefix.
- * @returns {HTMLElement} The HTML element with the specified data attribute.
+ * @param {{target?: HTMLElement | ShadowRoot}} [domElement] - The DOM element to query the element from; this refines the DOM search.
+ * @returns {HTMLElement | ShadowRoot} - The HTML element with the specified data attribute.
  */
-const getHTML = (dataAttribute) => {
-	const element = document.querySelector(`[${dataAttribute}]`);
-	const isHTMLElement = element instanceof HTMLElement;
+const getHTML = (dataAttribute, domElement = {}) => {
+	const { dataAttr } = dataAttribute;
+	const { target } = domElement;
+	const scope = target || document;
+	const element = scope.querySelector(`[${dataAttr}]`);
+	const isHTMLOrShadowElement =
+		element instanceof HTMLElement || element instanceof ShadowRoot;
 
-	if (!isHTMLElement) {
+	if (!isHTMLOrShadowElement) {
 		throw new Error(
-			`The element with the data attribute ${element} does not exist.`
+			`The element with the data attribute ${target} is not an HTML or Shadow element.`
 		);
 	}
 	return element;
@@ -31,34 +37,34 @@ const getHTML = (dataAttribute) => {
  */
 const book = {
 	header: {
-		search: getHTML("data-header-search"),
-		settings: getHTML("data-header-settings"),
+		search: getHTML({ dataAttr: "data-header-search" }),
+		settings: getHTML({ dataAttr: "data-header-settings" }),
 	},
 	list: {
-		dialog: getHTML("data-list-active"),
-		items: getHTML("data-list-items"),
-		message: getHTML("data-list-message"),
-		title: getHTML("data-list-title"),
-		blur: getHTML("data-list-blur"),
-		image: getHTML("data-list-image"),
-		subtitle: getHTML("data-list-subtitle"),
-		description: getHTML("data-list-description"),
-		button: getHTML("data-list-button"),
-		close: getHTML("data-list-close"),
+		dialog: getHTML({ dataAttr: "data-list-active" }),
+		items: getHTML({ dataAttr: "data-list-item" }),
+		message: getHTML({ dataAttr: "data-list-message" }),
+		title: getHTML({ dataAttr: "data-list-title" }),
+		blur: getHTML({ dataAttr: "data-list-blur" }),
+		image: getHTML({ dataAttr: "data-list-image" }),
+		subtitle: getHTML({ dataAttr: "data-list-subtitle" }),
+		description: getHTML({ dataAttr: "data-list-description" }),
+		button: getHTML({ dataAttr: "data-list-button" }),
+		close: getHTML({ dataAttr: "data-list-close" }),
 	},
 	search: {
-		dialog: getHTML("data-search-overlay"),
-		form: getHTML("data-search-form"),
-		title: getHTML("data-search-title"),
-		genres: getHTML("data-search-genres"),
-		authors: getHTML("data-search-authors"),
-		cancel: getHTML("data-search-cancel"),
+		dialog: getHTML({ dataAttr: "data-search-overlay" }),
+		form: getHTML({ dataAttr: "data-search-form" }),
+		title: getHTML({ dataAttr: "data-search-title" }),
+		genres: getHTML({ dataAttr: "data-search-genres" }),
+		authors: getHTML({ dataAttr: "data-search-authors" }),
+		cancel: getHTML({ dataAttr: "data-search-cancel" }),
 	},
 	settings: {
-		dialog: getHTML("data-settings-overlay"),
-		form: getHTML("data-settings-form"),
-		theme: getHTML("data-settings-theme"),
-		cancel: getHTML("data-settings-cancel"),
+		dialog: getHTML({ dataAttr: "data-settings-overlay" }),
+		form: getHTML({ dataAttr: "data-settings-form" }),
+		theme: getHTML({ dataAttr: "data-settings-theme" }),
+		cancel: getHTML({ dataAttr: "data-settings-cancel" }),
 	},
 };
 
@@ -101,4 +107,4 @@ appended to the HTML DOM when the app loads.
 book.search.genres.appendChild(createBookAttributeHTML(genres, "Genres"));
 book.search.authors.appendChild(createBookAttributeHTML(authors, "Authors"));
 
-export default book;
+export { book, getHTML };
