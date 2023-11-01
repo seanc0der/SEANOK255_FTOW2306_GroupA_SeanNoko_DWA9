@@ -1,27 +1,30 @@
-//@ts-check
-/* eslint-disable import/extensions */
+// @ts-check
+
 import { authors, genres } from "./data.js";
 
 /**
- * Finds and returns the HTML element with the provided data attribute. Throws
- * an error if the element with the specified data attribute is not found.
+ * Finds and returns the HTML element with the specified data attribute. Throws an error if the element
+ * with the specified data attribute is not of type 'HTMLElement'.
  *
- * @param {{dataAttr: string}} dataAttribute - The data attribute to search for, including
- * the `data-` prefix.
- * @param {{target?: HTMLElement | ShadowRoot}} [domElement] - The DOM element to query the element from; this refines the DOM search.
- * @returns {HTMLElement | ShadowRoot} - The HTML element with the specified data attribute.
+ * @param {Object} props - The properties object containing parameters for the search.
+ * @param {string} props.dataAttr - The data attribute to search for, excluding the `data-` prefix.
+ * @param {string} [props.value] - Optional value assigned to the data attribute, if any.
+ * @param {HTMLElement | ShadowRoot} [props.target] - Optional element (`HTMLElement` |`ShadowRoot`) to traverse for precise search.
+ * @returns {HTMLElement} The HTML element with the specified data attribute.
  */
-const getHTML = (dataAttribute, domElement = {}) => {
-	const { dataAttr } = dataAttribute;
-	const { target } = domElement;
-	const scope = target || document;
-	const element = scope.querySelector(`[${dataAttr}]`);
-	const isHTMLOrShadowElement =
-		element instanceof HTMLElement || element instanceof ShadowRoot;
+const getHTML = (props) => {
+	const { dataAttr, value, target } = props;
 
-	if (!isHTMLOrShadowElement) {
+	const selector = value
+		? `[data-${dataAttr}="${value}"]`
+		: `[data-${dataAttr}]`;
+	const scope = target || document;
+	const element = scope.querySelector(selector);
+	const isHTMLElement = element instanceof HTMLElement;
+
+	if (!isHTMLElement) {
 		throw new Error(
-			`The element with the data attribute ${target} is not an HTML or Shadow element.`
+			`The element with the data attribute ${selector} is not an HTMLElement`
 		);
 	}
 	return element;
@@ -37,34 +40,34 @@ const getHTML = (dataAttribute, domElement = {}) => {
  */
 const book = {
 	header: {
-		search: getHTML({ dataAttr: "data-header-search" }),
-		settings: getHTML({ dataAttr: "data-header-settings" }),
+		search: getHTML({ dataAttr: "header-search" }),
+		settings: getHTML({ dataAttr: "header-settings" }),
 	},
 	list: {
-		dialog: getHTML({ dataAttr: "data-list-active" }),
-		items: getHTML({ dataAttr: "data-list-item" }),
-		message: getHTML({ dataAttr: "data-list-message" }),
-		title: getHTML({ dataAttr: "data-list-title" }),
-		blur: getHTML({ dataAttr: "data-list-blur" }),
-		image: getHTML({ dataAttr: "data-list-image" }),
-		subtitle: getHTML({ dataAttr: "data-list-subtitle" }),
-		description: getHTML({ dataAttr: "data-list-description" }),
-		button: getHTML({ dataAttr: "data-list-button" }),
-		close: getHTML({ dataAttr: "data-list-close" }),
+		dialog: getHTML({ dataAttr: "list-active" }),
+		items: getHTML({ dataAttr: "list-items" }),
+		message: getHTML({ dataAttr: "list-message" }),
+		title: getHTML({ dataAttr: "list-title" }),
+		blur: getHTML({ dataAttr: "list-blur" }),
+		image: getHTML({ dataAttr: "list-image" }),
+		subtitle: getHTML({ dataAttr: "list-subtitle" }),
+		description: getHTML({ dataAttr: "list-description" }),
+		button: getHTML({ dataAttr: "list-button" }),
+		close: getHTML({ dataAttr: "list-close" }),
 	},
 	search: {
-		dialog: getHTML({ dataAttr: "data-search-overlay" }),
-		form: getHTML({ dataAttr: "data-search-form" }),
-		title: getHTML({ dataAttr: "data-search-title" }),
-		genres: getHTML({ dataAttr: "data-search-genres" }),
-		authors: getHTML({ dataAttr: "data-search-authors" }),
-		cancel: getHTML({ dataAttr: "data-search-cancel" }),
+		dialog: getHTML({ dataAttr: "search-overlay" }),
+		form: getHTML({ dataAttr: "search-form" }),
+		title: getHTML({ dataAttr: "search-title" }),
+		genres: getHTML({ dataAttr: "search-genres" }),
+		authors: getHTML({ dataAttr: "search-authors" }),
+		cancel: getHTML({ dataAttr: "search-cancel" }),
 	},
 	settings: {
-		dialog: getHTML({ dataAttr: "data-settings-overlay" }),
-		form: getHTML({ dataAttr: "data-settings-form" }),
-		theme: getHTML({ dataAttr: "data-settings-theme" }),
-		cancel: getHTML({ dataAttr: "data-settings-cancel" }),
+		dialog: getHTML({ dataAttr: "settings-overlay" }),
+		form: getHTML({ dataAttr: "settings-form" }),
+		theme: getHTML({ dataAttr: "settings-theme" }),
+		cancel: getHTML({ dataAttr: "settings-cancel" }),
 	},
 };
 
