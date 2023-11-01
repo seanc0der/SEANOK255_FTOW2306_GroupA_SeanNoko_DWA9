@@ -10,19 +10,18 @@ template.innerHTML = /* html */ `
 		  box-sizing: border-box;
 		}
 
-
-    .preview {
-      border-width: 0;
-      width: 100%;
-      font-family: Roboto, sans-serif;
-      padding: 0.5rem 1rem;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      text-align: left;
-      border-radius: 8px;
-      min-height: 110px
-    }
+		.preview {
+		  border-width: 0;
+		  width: 100%;
+		  font-family: Roboto, sans-serif;
+		  padding: 0.5rem 1rem;
+		  display: flex;
+		  align-items: center;
+		  cursor: pointer;
+		  text-align: left;
+		  border-radius: 8px;
+		  min-height: 110px
+		}
      
 		  border: 1px solid rgba(var(--color-dark), 0.15);
 		  background: rgba(var(--color-light), 1);
@@ -82,7 +81,7 @@ template.innerHTML = /* html */ `
 `;
 
 customElements.define(
-	"books-preview",
+	"book-preview",
 
 	class extends HTMLElement {
 		/** @type {string} */
