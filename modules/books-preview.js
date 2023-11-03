@@ -1,9 +1,13 @@
-/* eslint-disable import/extensions */
-import disableListButton from "./helpers.js";
-import book from "./dom-manipulation.js";
+// @ts-check
+
+import { book } from "./dom-manipulation.js";
 import { books, authors } from "./data.js";
 
-export const BOOKS_PER_PAGE = 36;
+/**
+ * The max number of books that can be loaded on a single page.
+ * @type {number}
+ * */
+const BOOKS_PER_PAGE = 36;
 
 /**
  * @typedef {object} BookItem - A book object containing specific metadata expressed as object properties.
@@ -19,164 +23,242 @@ export const BOOKS_PER_PAGE = 36;
  */
 
 /**
- * @typedef {BookItem[]} BookLibrary - An array representing a collection of book items, see {@link BookItem}.
+ * A class that creates a BooksPreview object to handle book previews and related operations.
  */
+class BooksPreview {
+	/**
+	 * Creates a `book-preview` element with attributes derived from the passed
+	 * `singleBook` argument, and returns it.
+	 *
+	 * @param {BookItem} singleBook - a Book Object containing the necessary metadata of the book.
+	 * @returns {HTMLElement} The created `book-preview` custom element.
+	 */
+	#createBookPreviewElement = (singleBook) => {
+		const { id, title, author: authorId, image } = singleBook;
+		const author = this.#authorsSource[authorId];
 
-// createBookPreviewsHTML
+		const bookPreviewElement = document.createElement("book-preview");
 
-/**
- * This function accepts a library of books as an `object`, extracts a specific
- * range of books, generates book previews in the form of button elements,
- * appends these previews to a `documentFragment` object, and finally returns
- * the `documentFragment`.
- *
- * @param {BookLibrary} booksSource - The library of books.
- * @param {number} [pageNum = 0] - The current page number of the book catalog.
- * By default, the `pageNum` is set to `0`. When creating the first book
- * previews fragment, the `pageNum` should be omitted, or `0` can be passed as
- * an argument, as this book previews fragment is to be added to the first page
- * of the book catalog section of the app. Thereafter, the function, which
- * should now include a `pageNum` argument greater than the default value,
- * should be invoked every time a user clicks the {@link book.list.button}
- * button to load more books, which creates additional book previews fragments.
- * @returns {DocumentFragment} A `documentFragment` containing a maximum of 36
- * newly created book previews ready to be added to the HTML DOM for user
- * display.
- */
-const createBookPreviewsHTML = (booksSource, pageNum = 0) => {
-	const bookPreviewsFragment = document.createDocumentFragment();
-	const startingRange = pageNum * BOOKS_PER_PAGE;
-	const endingRange = (pageNum + 1) * BOOKS_PER_PAGE;
-	const extractedBooks = booksSource.slice(startingRange, endingRange);
+		bookPreviewElement.setAttribute("id", id);
+		bookPreviewElement.setAttribute("image", image);
+		bookPreviewElement.setAttribute("title", title);
+		bookPreviewElement.setAttribute("author", author);
 
-	// eslint-disable-next-line no-restricted-syntax
-	for (const { author, id, image, title } of extractedBooks) {
-		const element = document.createElement("button");
-		element.classList = "preview";
-		element.setAttribute("data-preview", id);
+		return bookPreviewElement;
+	};
 
-		element.innerHTML = `
-			<img
-				class="preview__image"
-				src="${image}"
-			/>
+	/**
+	 * Updates the `showMoreButton` element with the remaining book count and
+	 * handles the button's disablement when the remaining book count is `0`.
+	 *
+	 * @returns {void}
+	 */
+	#updateRemainingBooks() {
+		if (this.#page === null) return;
 
-			<div class="preview__info">
-				<h3 class="preview__title">${title}</h3>
-				<div class="preview__author">${authors[author]}</div>
-			</div>
-		`;
+		const checkBooksInLibrary =
+			this.#booksSource.length - this.#page * BOOKS_PER_PAGE;
+		const remainingBooks = Math.max(0, checkBooksInLibrary);
 
-		bookPreviewsFragment.appendChild(element);
+		this.#showMoreButton.innerHTML = /* html */ `
+		<span>Show more</span>,
+		<span class="list__remaining">(${remainingBooks})</span>
+	`;
+
+		if (remainingBooks === 0) this.#showMoreButton.disabled = true;
 	}
 
-	return bookPreviewsFragment;
-};
+	/**
+	 * Represents a range of values with a start and an end index.
+	 * @typedef {object} Range
+	 * @property {number} start - The start index of the range.
+	 * @property {number} end - The end index of the range.
+	 */
 
-// createBooksPreview
-
-/**
- * @callback EmptyFn
- * @returns {void}
- */
-
-/**
- * Represents an object that handles book previews and related operations.
- * @typedef {object} BooksPreview
- *
- * @property {BookLibrary} currentBooksSource - The current library or source of
- * books.
- *
- * @property {EmptyFn} loadFirstPage - Clears the book list section and loads
- * the initial book preview fragment to the {@link book.list.items} HTML
- * Element. Updates the count of remaining books after loading.
- *
- * @property {EmptyFn} loadNextPage - Loads additional books onto the next page,
- * updates the page number internally, and displays the count of remaining books
- * that the user can load. If no books are left to load, it disables the
- * {@link book.list.button}.
- */
-
-/**
- * Factory function that creates and returns a books preview object from the
- * provided books source data. The returned methods offer a complete solution
- * for generating a book preview fragment from the provided books source,
- * appending it to the HTML DOM, and updating the number of remaining books,
- * depending on whether it's the first page or additional pages to be loaded.
- * This function enables the setting and retrieval of the current books source,
- * providing a flexible way to manage the books source reference data at all
- * times.
- *
- * @param {BookLibrary} booksSource - The library/source of books.
- * @returns {BooksPreview} The created BooksPreview object.
- */
-const createBooksPreview = (booksSource) => {
-	const current = {
-		page: 1,
-		booksSource,
-		/**
-		 * Performs a conditional check to determine the number of books available in
-		 * the {@link current.booksSource} reference book library. This value is
-		 * compared against the number of books loaded in the app, calculated based on
-		 * the {@link current.page} number multiplied by the fixed
-		 * {@link BOOKS_PER_PAGE} value. The result is then appended to the
-		 * {@link book.list.button} inner HTML and displayed to the user. If there
-		 * aren't any remaining books in the reference book library, the function will
-		 * invoke the {@link disableListButton} function.
-		 */
-		updateRemainingBooks() {
-			const checkBooksInLibrary =
-				this.booksSource.length - this.page * BOOKS_PER_PAGE;
-			const remainingBooks =
-				(checkBooksInLibrary > 0 && checkBooksInLibrary) || 0;
-
-			book.list.button.innerHTML = /* html */ `
-				<span>Show more</span>, 
-				<span class="list__remaining">(${remainingBooks})</span>
-			`;
-
-			if (remainingBooks === 0) disableListButton();
-		},
+	/**
+	 * A range object to aid in the slicing of the `booksSource` via the `slice`
+	 * method.
+	 *
+	 * @type {Object<string, number>}
+	 */
+	#range = {
+		start: 0,
+		end: BOOKS_PER_PAGE,
 	};
 
-	const loadFirstPage = () => {
-		if (current.page !== 1) current.page = 1;
+	/** @type {number | null} */
+	#page = null;
 
-		book.list.items.innerHTML = "";
-		book.list.items.appendChild(createBookPreviewsHTML(current.booksSource));
-		current.updateRemainingBooks();
-	};
+	/** @type {BookItem[]} */
+	#booksSource;
 
-	const loadNextPage = () => {
-		book.list.items.appendChild(
-			createBookPreviewsHTML(current.booksSource, current.page)
+	/** @type {Object<string, string>} */
+	#authorsSource;
+
+	/** @type {HTMLElement} */
+	#targetElement;
+
+	/** @type {HTMLButtonElement} */
+	#showMoreButton;
+
+	/**
+	 * Creates an instance of the BooksPreview class.
+	 * @param {Object} props - The properties for the BooksPreview instance.
+	 * @param {BookItem[]} props.booksSource - The library/source of books.
+	 * @param {Object<string, string>} props.authorsSource - The authors source database.
+	 * @param {HTMLElement} props.targetElement - The target HTMLelement to append the generated book previews to.
+	 * @param {HTMLElement} props.showMoreButton - The button responsible for loading additional books to the user.
+	 * @throws {Error} Throws an error if the showMoreButton is not an HTMLButtonElement.
+	 */
+	constructor(props) {
+		this.#booksSource = props.booksSource;
+		this.#authorsSource = props.authorsSource;
+		this.#targetElement = props.targetElement;
+
+		if (!(props.showMoreButton instanceof HTMLButtonElement)) {
+			throw new Error(
+				`The ${props.showMoreButton} HTMLElement is not an HTMLButtonElement Type`
+			);
+		}
+
+		this.#showMoreButton = props.showMoreButton;
+	}
+
+	/**
+	 * Clears the inner text content of the passed `targetElement` before adding the
+	 * custom `book-preview` elements. The page number and the number of remaining
+	 * books are then updated. This results in the modification of the inner text
+	 * content of the passed `showMoreButton` element.
+	 *
+	 * @throws Throws an error if the method is called when the current
+	 * `page` is not `null`, indicating that the first page has already been loaded.
+	 * The `loadFirstPage` method can only be called once to prepend the first page.
+	 * @returns {void}
+	 */
+	loadFirstPage = () => {
+		if (this.#page !== null) {
+			throw new Error(
+				"The first page has already been loaded using this method. To load additional pages, use the 'loadNextPage' method."
+			);
+		}
+		this.#targetElement.innerHTML = "";
+
+		const extractedBooks = this.#booksSource.slice(
+			this.#range.start,
+			this.#range.end
 		);
-		current.page += 1;
-		current.updateRemainingBooks();
+
+		const bookPreviewElements = extractedBooks.map(
+			this.#createBookPreviewElement
+		);
+
+		bookPreviewElements.forEach((element) =>
+			this.#targetElement.appendChild(element)
+		);
+
+		this.#page = 1;
+		this.#updateRemainingBooks();
 	};
 
-	return {
-		get currentBooksSource() {
-			return current.booksSource;
-		},
-		set currentBooksSource(newBooksSource) {
-			current.booksSource = newBooksSource;
-		},
-		loadFirstPage,
-		loadNextPage,
+	/**
+	 * Loads additional books onto the next page,
+	 * updates the page number internally, and displays the count of remaining books
+	 * that the user can load. If no books are left to load, it disables the `showMoreButton` target.
+	 *
+	 * @returns {void}
+	 *
+	 * @throws Throws an error if it called when the current `page` is
+	 * `null` as this indicates that the first page has not yet been loaded. It
+	 * can only be called after the `loadFirstPage` method has been called to load the fist page.
+	 */
+	loadNextPage = () => {
+		if (this.#page === null) {
+			throw new Error(
+				"The first page has not been loaded yet. Please use the 'loadFirstPage' method first."
+			);
+		}
+
+		this.#range.start += BOOKS_PER_PAGE;
+		this.#range.end += BOOKS_PER_PAGE;
+
+		const extractedBooks = this.#booksSource.slice(
+			this.#range.start,
+			this.#range.end
+		);
+
+		const bookPreviewElements = extractedBooks.map(
+			this.#createBookPreviewElement
+		);
+
+		bookPreviewElements.forEach((element) =>
+			this.#targetElement.appendChild(element)
+		);
+
+		this.#page += 1;
+		this.#updateRemainingBooks();
 	};
-};
+
+	get currentPage() {
+		return this.#page;
+	}
+
+	/**
+	 * Get the current page state.
+	 * @throws Throws an error if an attempt is made to assign a new value to it.
+	 */
+	// eslint-disable-next-line class-methods-use-this
+	set currentPage(newPageNum) {
+		throw new Error("Cannot change the page number");
+	}
+
+	get currentBooksSource() {
+		return this.#booksSource;
+	}
+
+	/**
+	 * Passing a new books source will reset the page number and clear the
+	 * passed `targetElement`'s inner text content. The `loadFirstPage` method
+	 * would need to be called to load the first batch of books-previews again.
+	 * @param {BookItem[]} newBooksSource
+	 */
+	set currentBooksSource(newBooksSource) {
+		this.#range.start = 0;
+		this.#range.end = BOOKS_PER_PAGE;
+		this.#page = null;
+		this.booksSource = newBooksSource;
+	}
+
+	get currentAuthorsSource() {
+		return this.#authorsSource;
+	}
+
+	/**
+	 * A `newAuthorsSource` database can be passed, with additional data (authors), for example.
+	 * @param {Object<string, string>} newAuthorsSource
+	 */
+	set currentAuthorsSource(newAuthorsSource) {
+		this.#authorsSource = newAuthorsSource;
+	}
+}
 
 /**
- * A books preview object based on the {@link books} as its book source argument
+ * A books preview object based on the {@link books} as its starting book source argument
  * (default). The default book source can be replaced with a different one by
- * passing it as an argument to the `replaceBooksSource` object method.
- * Subsequently, the {@link loadFirstPage} and {@link loadNextPage} methods can
+ * passing it as an argument to the `currentBooksSource` class method.
+ * Subsequently, the `loadFirstPage` and `loadNextPage` methods can
  * be invoked to regenerate and append the new book previews to the
- * {@link book.list.items} HTML Element.
+ * `targetElement`.
  */
-export const booksPreviewObj = createBooksPreview(books);
+const booksPreview = new BooksPreview({
+	booksSource: books,
+	authorsSource: authors,
+	targetElement: book.list.items,
+	showMoreButton: book.list.button,
+});
 
-// Upon app loading, the first book preview is added to the beginning of the
-// first page, and the remaining book count is updated.
-booksPreviewObj.loadFirstPage();
+// Upon app loading, the first `book-preview`'s batch is generated and appended
+// to the first page of the app, and the passed `showMoreButton` target's inner
+// text content is updated with the remaining books count.
+booksPreview.loadFirstPage();
+
+export default booksPreview;
