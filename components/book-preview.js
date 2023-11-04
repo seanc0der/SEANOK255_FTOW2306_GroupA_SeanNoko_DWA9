@@ -5,7 +5,8 @@ import { getHTML } from "../modules/dom-manipulation.js";
 const template = document.createElement("template");
 
 template.innerHTML = /* html */ `
-	<style>
+		<style>
+
 		* {
 		  box-sizing: border-box;
 		}
@@ -20,9 +21,7 @@ template.innerHTML = /* html */ `
 		  cursor: pointer;
 		  text-align: left;
 		  border-radius: 8px;
-		  min-height: 110px
-		}
-     
+		  max-height: 100px;
 		  border: 1px solid rgba(var(--color-dark), 0.15);
 		  background: rgba(var(--color-light), 1);
 		}
@@ -68,6 +67,7 @@ template.innerHTML = /* html */ `
 		.preview__author {
 		  color: rgba(var(--color-dark), 0.4);
 		}
+		
 	</style>
 
 	<button class="preview" data-preview>
@@ -155,7 +155,22 @@ customElements.define(
 			if (!(author instanceof HTMLElement)) {
 				throw new Error("The instance must be an HTML Element");
 			}
+
 			author.textContent = this.#author;
+
+			const customEvent = new CustomEvent("bookPreviewClicked", {
+				bubbles: true,
+				detail: {
+					id: this.#id,
+					image: this.#image,
+					title: this.#title,
+					author: this.#author,
+				},
+			});
+
+			this.addEventListener("click", () => {
+				this.dispatchEvent(customEvent);
+			});
 		}
 	}
 );
