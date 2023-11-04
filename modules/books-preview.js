@@ -225,7 +225,7 @@ class BooksPreview {
 		this.#range.start = 0;
 		this.#range.end = BOOKS_PER_PAGE;
 		this.#page = null;
-		this.booksSource = newBooksSource;
+		this.#booksSource = newBooksSource;
 	}
 
 	get currentAuthorsSource() {
