@@ -1,8 +1,10 @@
-/* eslint-disable import/extensions */
-import "./components/books-preview.js";
-import { authors, books } from "./modules/data.js";
+// @ts-check
+
+import "./components/book-preview.js";
+import { books } from "./modules/data.js";
 import { book } from "./modules/dom-manipulation.js";
-// import { booksPreviewObj } from "./modules/books-preview.js";
+import booksPreview from "./modules/books-preview.js";
+import BookPreviewDialog from "./components/book-preview-dialog.js";
 
 // toggleDialogHandler
 
@@ -46,9 +48,23 @@ const toggleThemeHandler = (event) => {
 		day: { dark: "10, 10, 20", light: "255, 255, 255" },
 		night: { dark: "255, 255, 255", light: "10, 10, 20" },
 	};
+
+	if (!(event.target instanceof HTMLFormElement)) {
+		throw new Error(
+			`${event.target} is not an instance of HTMLFormElement type`
+		);
+	}
+
 	const formData = new FormData(event.target);
 	const { theme } = Object.fromEntries(formData);
-	const styleDeclaration = document.styleSheets[0].cssRules[0].style;
+
+	const cssRule = document.styleSheets[0].cssRules[0];
+
+	if (!(cssRule instanceof CSSStyleRule)) {
+		throw new Error(`${cssRule} is not a CSSSyleRule`);
+	}
+
+	const styleDeclaration = cssRule.style;
 
 	styleDeclaration.setProperty("--color-dark", css[theme].dark);
 	styleDeclaration.setProperty("--color-light", css[theme].light);
@@ -56,49 +72,49 @@ const toggleThemeHandler = (event) => {
 	handleToggleDialog("settings");
 };
 
-// handleOpenBookPreviewDialog
+// handleBookPreviewDialog
 
 /**
- * Handles the click event when a book preview from {@link book.list.items} is
- * clicked. This function extracts the `preview id` of the clicked button
- * element (book preview), then searches the {@link books} object for the
- * matching book. If found, it populates the elements within
- * {@link book.list.dialog} (`title`, `subtitle`, `description`, `image`,
- * `blur`) with the book's data and displays the dialog modal to the user.
- *
- * @param {Event} event - The click event.
+ * Handles the 'BookPreviewClicked' event by extracting essential book details
+ * from the custom event's `detail`. The extracted information includes the
+ * book's `id`, `title`, `image`, and `author`. The handler then fetches
+ * additional metadata such as the book's `description` and date `published`
+ * from the {@link books} database. These values are assigned as attributes to
+ * the `book-preview-dialog` before displaying the dialog modal to the user.
+ * @param {Event} event - The click event with custom detail data.
  */
-const handleOpenBookPreviewDialog = (event) => {
-	const pathArray = Array.from(event.path || event.composedPath());
-	let active = null;
+const handleBookPreviewDialog = (event) => {
+	if (!(event instanceof CustomEvent)) {
+		throw new Error(`${event} is not an instance of CustomEvent`);
+	}
+	const { id, title, image, author } = event.detail;
 
-	// eslint-disable-next-line no-restricted-syntax
-	for (const node of pathArray) {
-		if (active) break;
+	const bookPreviewDialog = document.createElement("book-preview-dialog");
 
-		if (node?.dataset?.preview) {
-			let result = null;
+	bookPreviewDialog.setAttribute("title", title);
+	bookPreviewDialog.setAttribute("image", image);
+	bookPreviewDialog.setAttribute("blur", image);
 
-			// eslint-disable-next-line no-restricted-syntax
-			for (const singleBook of books) {
-				if (result) break;
-				if (singleBook.id === node?.dataset?.preview) result = singleBook;
-			}
+	books.forEach((singleBook) => {
+		if (singleBook.id === id) {
+			const publishedYear = new Date(singleBook.published).getFullYear();
+			const subtitle = `${author} (${publishedYear})`;
 
-			active = result;
+			bookPreviewDialog.setAttribute("subtitle", subtitle);
+			bookPreviewDialog.setAttribute("description", singleBook.description);
 		}
+	});
+
+	// Insert the custom element to ensure all dialog-related elements are grouped together.
+	document.body.insertBefore(bookPreviewDialog, book.search.dialog);
+
+	if (!(bookPreviewDialog instanceof BookPreviewDialog)) {
+		throw new Error(
+			`The ${bookPreviewDialog} instance is not an instance of BookPreviewDialog class`
+		);
 	}
 
-	if (active) {
-		handleToggleDialog("list");
-		book.list.blur.src = active.image;
-		book.list.image.src = active.image;
-		book.list.title.innerText = active.title;
-		book.list.subtitle.innerText = `${authors[active.author]} (${new Date(
-			active.published
-		).getFullYear()})`;
-		book.list.description.innerText = active.description;
-	}
+	bookPreviewDialog.open = true;
 };
 
 // handleBookFilterSearch
@@ -134,6 +150,10 @@ const handleBookFilterSearch = (event) => {
 			if (singleGenre === filters.genre) genreMatch = true;
 		}
 
+		if (typeof filters.title !== "string") {
+			throw new Error(`${filters.title} is not a string`);
+		}
+
 		if (
 			(filters.title.trim() === "" ||
 				book.title.toLowerCase().includes(filters.title.toLowerCase())) &&
@@ -150,11 +170,16 @@ const handleBookFilterSearch = (event) => {
 		book.list.message.classList.remove("list__message_show");
 	}
 
-	booksPreviewObj.currentBooksSource = result;
-	booksPreviewObj.loadFirstPage();
+	booksPreview.currentBooksSource = result;
+	booksPreview.loadFirstPage();
 
 	window.scrollTo({ top: 0, behavior: "smooth" });
 	handleToggleDialog("search");
+
+	if (!(book.search.form instanceof HTMLFormElement)) {
+		throw new Error(`${book.search.form} is not an HTMLFormElement`);
+	}
+	book.search.form.reset();
 };
 
 // Event Handlers
@@ -176,24 +201,7 @@ book.header.settings.addEventListener("click", () => {
 	handleToggleDialog("settings");
 });
 
-book.list.close.addEventListener("click", () => {
-	handleToggleDialog("list");
-});
-
-// book.list.button.addEventListener("click", booksPreviewObj.loadNextPage);
-book.list.items.addEventListener("click", handleOpenBookPreviewDialog);
-// book.search.form.addEventListener("submit", handleBookFilterSearch);
+book.list.button.addEventListener("click", booksPreview.loadNextPage);
+book.list.items.addEventListener("bookPreviewClicked", handleBookPreviewDialog);
+book.search.form.addEventListener("submit", handleBookFilterSearch);
 book.settings.form.addEventListener("submit", toggleThemeHandler);
-
-const extracted = books.slice(0, 36);
-extracted.forEach((singleBook) => {
-	const { id, image, title, author } = singleBook;
-	const element = document.createElement("books-preview");
-	element.setAttribute("title", title);
-	element.setAttribute("author", authors[author]);
-	element.setAttribute("image", image);
-	element.setAttribute("id", id);
-
-	console.log(element);
-	book.list.items.appendChild(element);
-});
